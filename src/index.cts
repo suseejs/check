@@ -72,18 +72,11 @@ function checkTypes(deps: DepsFile[], compilerOptions: ts.CompilerOptions) {
 }
 
 /**
- * Check if all files in the given list have the same file extension.
+ * Check the file extensions of given dependencies.
  * @param deps List of files to check, where each file is an object with
  *          `file` and `content` properties.
- * @returns An object with the following properties:
- *          - `isNone`: True if none of the files have any of the supported
- *            extensions (i.e., not .js, .jsx, .ts, .tsx, .cts, .mts,
- *            .cjs).
- *          - `isJsx`: True if all files have .jsx or .tsx extensions.
- *          - `isCjs`: True if all files have .js or .cjs extensions.
- *          - `isBoth`: True if all files have both .js and .ts extensions.
- *          - `isJs`: True if all files have .js or .jsx extensions.
- *          - `isTs`: True if all files have .ts or .tsx extensions.
+ * @returns True if no unsupported file extensions are found, false otherwise.
+ * @throws If unsupported file extensions are found, the function will throw an error and exit the process.
  */
 function checkExtGroup(deps: DepsFile[]) {
   const exts = deps.map((dep) => {
@@ -102,24 +95,39 @@ function checkExtGroup(deps: DepsFile[]) {
   const isTs = exts.every((i) => tsesmSet.has(i));
   const isBoth = isJs && isTs;
   const isNone = !exts.every((i) => allSet.has(i));
-  return {
-    isNone,
-    isJsx,
-    isCjs,
-    isBoth,
-    isJs,
-    isTs,
-  };
+  if (isNone) {
+    console.warn(
+      "Bundler detects none Javascript or Typescript extensions in the dependencies tree.",
+    );
+    process.exit(1);
+  }
+  if (isJsx) {
+    console.warn(
+      "The package detects JSX extensions (.jsx or .tsx) in the dependencies tree, which is currently unsupported.",
+    );
+    process.exit(1);
+  }
+  if (isCjs) {
+    console.warn(
+      "The package detects commonjs extensions (.cjd or .cts) in the dependencies tree, which is currently unsupported.",
+    );
+    process.exit(1);
+  }
+  if (isBoth) {
+    console.warn(
+      "The package detects both Javascript or Typescript extensions in the dependencies tree, currently unsupported.",
+    );
+    process.exit(1);
+  }
+
+  return true;
 }
 
 /**
  * Check the module format of all the given files.
  * @param deps List of files to check, where each file is an object with
  *          `file` and `content` properties.
- * @returns An object with the following properties:
- *          - `unknowCount`: Number of files that could not be checked due to
- *            errors.
- *          - `cjsCount`: Number of files that have CommonJS module syntax.
+ * @returns True if the function finishes without errors, false otherwise.
  */
 function checkModuleFormat(deps: DepsFile[]) {
   let _esmCount = 0;
@@ -208,37 +216,37 @@ function checkModuleFormat(deps: DepsFile[]) {
       unknowCount++;
     }
   } // loop
-  //
-  return { unknowCount, cjsCount };
+  if (unknowCount) {
+    console.warn(
+      "Unknown error when checking module types in the dependencies tree.",
+    );
+    process.exit(1);
+  }
+  if (cjsCount) {
+    console.warn(
+      "The package detects CommonJs format  in the dependencies tree, currently unsupported.",
+    );
+    process.exit(1);
+  }
+  return true;
 }
 
 /**
- * Check TypeScript files for errors and determine their module format.
+ * Check if all files in the given list have the same file extension and
+ * the same module format.
  * @param deps List of files to check, where each file is an object with
  *          `file` and `content` properties.
- * @param compilerOptions TypeScript compiler options.
- * @returns An object with the following properties:
- *          - `isNone`: True if none of the files have any of the supported
- *            extensions (i.e., not .js, .jsx, .ts, .tsx, .cts, .mts, .cjs).
- *          - `isJsx`: True if all files have .jsx or .tsx extensions.
- *          - `isCjs`: True if all files have .js or .cjs extensions.
- *          - `isBoth`: True if all files have both .js and .ts extensions.
- *          - `isJs`: True if all files have .js or .jsx extensions.
- *          - `isTs`: True if all files have .ts or .tsx extensions.
- *          - `unknowCount`: The number of files that could not be checked.
- *          - `cjsCount`: The number of files that use CommonJS modules.
- *          - `esmCount`: The number of files that use ES modules.
+ * @returns True if all files have the same file extension and module format,
+ *          false otherwise.
  */
-const check = (deps: DepsFile[], compilerOptions: ts.CompilerOptions) => {
-  try {
-    checkTypes(deps, compilerOptions);
-  } catch (err) {
-    if (err) throw new Error("Error when type checking");
-  }
-
+function fileExtensionAndFormat(deps: DepsFile[]) {
+  console.time("checked extension and module");
   const ce = checkExtGroup(deps);
   const cm = checkModuleFormat(deps);
-  return { ...ce, ...cm };
-};
+  console.timeEnd("checked extension and module");
+  return ce && cm;
+}
+
+const check = { checkTypes, fileExtensionAndFormat };
 
 export = check;
