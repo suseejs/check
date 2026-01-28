@@ -25,9 +25,15 @@
     "type": "git",
     "url": "git+https://github.com/suseejs/check.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "TypeScript"
+  ],
+  "author": {
+    "name": "Pho Thin Mg",
+    "email": "phothinmg@disroot.org",
+    "url": "https://phothinmg.github.io/"
+  },
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/suseejs/check/issues"
   },
@@ -37,5 +43,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
