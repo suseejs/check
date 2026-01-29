@@ -71,6 +71,14 @@ function checkTypes(deps: DepsFile[], compilerOptions: ts.CompilerOptions) {
   }
 }
 
+function checkJSX(deps: DepsFile[]) {
+  const exts = deps.map((dep) => {
+    return path.extname(dep.file);
+  });
+  const jsxSet = new Set(jsx_exts);
+  return exts.every((i) => jsxSet.has(i));
+}
+
 /**
  * Check the file extensions of given dependencies.
  * @param deps List of files to check, where each file is an object with
@@ -86,11 +94,9 @@ function checkExtGroup(deps: DepsFile[]) {
   const jscjsSet = new Set(jscjs_exts);
   const tsesmSet = new Set(tsesm_exts);
   const tscjsSet = new Set(tscjs_exts);
-  const jsxSet = new Set(jsx_exts);
   const allSet = new Set(all_exts);
   const isCjs =
     exts.every((i) => jscjsSet.has(i)) || exts.every((i) => tscjsSet.has(i));
-  const isJsx = exts.every((i) => jsxSet.has(i));
   const isJs = exts.every((i) => jsesmSet.has(i));
   const isTs = exts.every((i) => tsesmSet.has(i));
   const isBoth = isJs && isTs;
@@ -98,12 +104,6 @@ function checkExtGroup(deps: DepsFile[]) {
   if (isNone) {
     console.warn(
       "Bundler detects none Javascript or Typescript extensions in the dependencies tree.",
-    );
-    process.exit(1);
-  }
-  if (isJsx) {
-    console.warn(
-      "The package detects JSX extensions (.jsx or .tsx) in the dependencies tree, which is currently unsupported.",
     );
     process.exit(1);
   }
@@ -247,6 +247,6 @@ function fileExtensionAndFormat(deps: DepsFile[]) {
   return ce && cm;
 }
 
-const check = { checkTypes, fileExtensionAndFormat };
+const check = { checkTypes, fileExtensionAndFormat, checkJSX };
 
 export default check;
