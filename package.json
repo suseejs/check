@@ -1,6 +1,6 @@
 {
   "name": "@suseejs/check",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Types check",
   "type": "module",
   "main": "dist/index.cjs",
